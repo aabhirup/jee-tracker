@@ -452,8 +452,9 @@ const DEFAULT_SECTIONS = [
   { id:'maths', label:'Maths', type:'maths', tasks:[] },
 ];
 
-const SUPABASE_URL = 'https://yozegvoysdxmrjmttmim.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvemVndm95c2R4bXJqbXR0bWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzcwMTEsImV4cCI6MjA4OTI1MzAxMX0._vj1rEV4UBo_8X7VZWDO-VzEiyy7zLZE3MAnFm0Y3dk';
+// ── SUPABASE CONFIG — paste your values here after setup ──
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';       // e.g. https://xxxx.supabase.co
+const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';  // starts with eyJ...
 const SUPABASE_ENABLED = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
 
 function loadState() {
@@ -889,203 +890,780 @@ function updateProgress(){
 }
 
 // ── CELEBRATIONS ──
+let celebCanvas2 = null;
+let celebCtx2 = null;
+let celebRAF = null;
+
+function makeCelebCanvas() {
+  let c = document.getElementById('animCanvas2');
+  if (!c) {
+    c = document.createElement('canvas');
+    c.id = 'animCanvas2';
+    c.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:8002;pointer-events:none;display:none;';
+    document.body.appendChild(c);
+  }
+  c.width = window.innerWidth;
+  c.height = window.innerHeight;
+  c.style.display = 'block';
+  return c;
+}
+
+function hideCelebCanvas() {
+  const c = document.getElementById('animCanvas2');
+  if (c) c.style.display = 'none';
+  if (celebRAF) { cancelAnimationFrame(celebRAF); celebRAF = null; }
+}
+
+function drawLabel(ctx, text, color, y) {
+  ctx.save();
+  ctx.font = 'bold 32px "Bebas Neue", sans-serif';
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.letterSpacing = '3px';
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur = 10;
+  ctx.fillText(text, ctx.canvas.width/2, y);
+  ctx.restore();
+}
+
 function triggerCelebration(secType) {
   const isPhysics = secType==='physics';
   const isMaths = secType==='maths';
   const isChem = ['physical','inorganic','organic'].includes(secType);
-
-  // Confetti burst
+  hideCelebCanvas();
+  if (isPhysics) {
+    const pick = Math.floor(Math.random()*3);
+    if (pick===0) runPhysicsBlackhole();
+    else if (pick===1) runPhysicsAtom();
+    else runPhysicsNewton();
+  } else if (isChem) {
+    runChemFlasks();
+  } else {
+    runMathsBlackboard();
+  }
   launchConfetti(secType);
-
-  // Subject-specific animation
-  const container=document.getElementById('animContainer');
-  const scenes={physics:'physicsAnim',maths:'mathsAnim'};
-  let sceneId = isChem?'chemAnim': (isPhysics?'physicsAnim':'mathsAnim');
-
-  // hide all scenes first
-  document.querySelectorAll('.anim-scene').forEach(s=>{s.classList.remove('show');});
-
-  if (isPhysics) drawRocketScene();
-  else if (isMaths) drawMathsScene();
-  else drawChemScene();
-
-  container.style.display='flex';
-  const scene=document.getElementById(sceneId);
-  scene.classList.add('show');
-
-  setTimeout(()=>{
-    scene.classList.remove('show');
-    container.style.display='none';
-  },3500);
 }
 
-// ── PHYSICS: ROCKET + FIREWORKS ──
-function drawRocketScene(){
-  const svg=document.getElementById('physicsAnimSvg');
-  svg.innerHTML='';
+// ── PHYSICS 1: ROCKET → BLACK HOLE ──
+function runPhysicsBlackhole() {
+  const cv = makeCelebCanvas();
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const cx = W*0.72, cy = H*0.38;
+  let t = 0;
+  // rocket state
+  let rx = W*0.1, ry = H*0.85;
+  let rAngle = -0.4;
+  const DURATION = 220;
 
-  // Stars background
-  for(let i=0;i<30;i++){
-    const star=document.createElementNS('http://www.w3.org/2000/svg','circle');
-    star.setAttribute('cx',Math.random()*300);
-    star.setAttribute('cy',Math.random()*200);
-    star.setAttribute('r',Math.random()*1.5+.5);
-    star.setAttribute('fill','white');
-    star.setAttribute('opacity',Math.random()*.8+.2);
-    svg.appendChild(star);
-  }
+  function frame() {
+    ctx.clearRect(0,0,W,H);
+    const prog = t/DURATION;
 
-  // Rocket body
-  const rocketG=document.createElementNS('http://www.w3.org/2000/svg','g');
-  rocketG.innerHTML=`
-    <animateTransform attributeName="transform" type="translate" from="120 280" to="120 -40" dur="1.2s" fill="freeze" calcMode="spline" keySplines="0.4,0,0.2,1"/>
-    <polygon points="0,-28 -12,12 12,12" fill="#c084d8" stroke="white" stroke-width="1.5"/>
-    <rect x="-12" y="12" width="24" height="28" rx="3" fill="#9b59b6" stroke="white" stroke-width="1.5"/>
-    <rect x="-4" y="16" width="8" height="10" rx="2" fill="#dce6f5" opacity=".8"/>
-    <polygon points="-18,40 -12,22 -12,40" fill="#7b2d8b"/>
-    <polygon points="18,40 12,22 12,40" fill="#7b2d8b"/>
-    <ellipse cx="0" cy="42" rx="8" ry="5" fill="orange" opacity=".9">
-      <animate attributeName="ry" values="5;9;5" dur=".15s" repeatCount="indefinite"/>
-    </ellipse>
-    <ellipse cx="0" cy="46" rx="4" ry="3" fill="yellow" opacity=".8">
-      <animate attributeName="ry" values="3;6;3" dur=".12s" repeatCount="indefinite"/>
-    </ellipse>
-  `;
-  svg.appendChild(rocketG);
-
-  // Fireworks bursts - appear after rocket flies up
-  const colors=['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff6bff','#fff'];
-  for(let f=0;f<6;f++){
-    const x=30+f*45, y=40+Math.random()*80;
-    const burstG=document.createElementNS('http://www.w3.org/2000/svg','g');
-    burstG.setAttribute('opacity','0');
-    const delay=1.0+f*0.15;
-    burstG.innerHTML=`<animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.7;1" dur="1.2s" begin="${delay}s" fill="freeze"/>`;
-    for(let p=0;p<12;p++){
-      const angle=(p/12)*Math.PI*2;
-      const len=18+Math.random()*14;
-      const line=document.createElementNS('http://www.w3.org/2000/svg','line');
-      line.setAttribute('x1',x); line.setAttribute('y1',y);
-      line.setAttribute('x2',x+Math.cos(angle)*len);
-      line.setAttribute('y2',y+Math.sin(angle)*len);
-      line.setAttribute('stroke',colors[f%colors.length]);
-      line.setAttribute('stroke-width','2');
-      line.setAttribute('stroke-linecap','round');
-      line.innerHTML=`<animate attributeName="x2" values="${x};${x+Math.cos(angle)*len}" dur=".3s" begin="${delay}s" fill="freeze"/>
-        <animate attributeName="y2" values="${y};${y+Math.sin(angle)*len}" dur=".3s" begin="${delay}s" fill="freeze"/>`;
-      burstG.appendChild(line);
+    // starfield
+    ctx.save();
+    for(let i=0;i<80;i++){
+      const sx = (i*347+t*0.3)%W;
+      const sy = (i*211+t*0.1)%H;
+      const br = 0.3+0.7*Math.sin(t*0.05+i);
+      ctx.globalAlpha = br*0.8;
+      ctx.fillStyle='white';
+      ctx.fillRect(sx,sy,i%3===0?2:1,i%3===0?2:1);
     }
-    svg.appendChild(burstG);
+    ctx.restore();
+
+    // Black hole
+    const bhR = 55 + 8*Math.sin(t*0.04);
+    // accretion disk
+    for(let ring=0;ring<6;ring++){
+      const rr = bhR + ring*18 + 4*Math.sin(t*0.05+ring);
+      const grad = ctx.createRadialGradient(cx,cy,rr-8,cx,cy,rr+8);
+      const hue = (ring*30+t*2)%360;
+      grad.addColorStop(0,`hsla(${hue},100%,70%,0)`);
+      grad.addColorStop(0.5,`hsla(${hue},100%,70%,${0.35-ring*0.04})`);
+      grad.addColorStop(1,`hsla(${hue},100%,70%,0)`);
+      ctx.save();
+      ctx.scale(1, 0.35);
+      ctx.beginPath();
+      ctx.arc(cx, cy/0.35, rr, 0, Math.PI*2);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 12;
+      ctx.stroke();
+      ctx.restore();
+    }
+    // event horizon
+    const bhGrad = ctx.createRadialGradient(cx,cy,0,cx,cy,bhR);
+    bhGrad.addColorStop(0,'#000000');
+    bhGrad.addColorStop(0.7,'#0a0010');
+    bhGrad.addColorStop(1,'rgba(80,0,120,0.4)');
+    ctx.beginPath(); ctx.arc(cx,cy,bhR,0,Math.PI*2);
+    ctx.fillStyle=bhGrad; ctx.fill();
+    // glow ring
+    ctx.beginPath(); ctx.arc(cx,cy,bhR,0,Math.PI*2);
+    ctx.strokeStyle='rgba(180,100,255,0.7)';
+    ctx.lineWidth=4; ctx.stroke();
+
+    // Rocket trajectory (spiral toward black hole)
+    if (prog < 0.75) {
+      const eased = prog/0.75;
+      rx = W*0.1 + eased*(cx - W*0.1 - 30);
+      ry = H*0.85 + eased*(cy - H*0.85 + 20);
+      rAngle = -0.4 + eased*(Math.PI*0.5);
+      const rscale = 1 - eased*0.4;
+
+      ctx.save();
+      ctx.translate(rx, ry);
+      ctx.rotate(rAngle);
+      ctx.scale(rscale, rscale);
+      // flame
+      ctx.globalAlpha=0.9;
+      const fg=ctx.createLinearGradient(0,18,0,50);
+      fg.addColorStop(0,'orange'); fg.addColorStop(1,'rgba(255,100,0,0)');
+      ctx.fillStyle=fg;
+      ctx.beginPath(); ctx.ellipse(0,35,8,18,0,0,Math.PI*2); ctx.fill();
+      // body
+      ctx.fillStyle='#9b59b6';
+      ctx.beginPath(); ctx.roundRect(-12,10,24,30,4); ctx.fill();
+      ctx.fillStyle='#c084d8';
+      ctx.beginPath(); ctx.moveTo(0,-20); ctx.lineTo(-12,10); ctx.lineTo(12,10); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='rgba(200,230,255,0.8)';
+      ctx.beginPath(); ctx.roundRect(-4,14,8,10,2); ctx.fill();
+      ctx.restore();
+
+      // exhaust trail
+      for(let tr=1;tr<=8;tr++){
+        const trprog = Math.max(0, eased - tr*0.02);
+        const trx = W*0.1 + trprog/0.75*(cx - W*0.1 - 30);
+        const try_ = H*0.85 + trprog/0.75*(cy - H*0.85 + 20);
+        ctx.save();
+        ctx.globalAlpha=0.15*(1-tr/8);
+        ctx.fillStyle='orange';
+        ctx.beginPath(); ctx.arc(trx,try_,6-tr*0.5,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+    } else {
+      // rocket sucked in — draw shredding effect
+      const subprog = (prog-0.75)/0.25;
+      for(let sh=0;sh<12;sh++){
+        const angle2 = sh*(Math.PI*2/12) + t*0.2;
+        const dist = 20*(1-subprog)*bhR*0.5;
+        ctx.save();
+        ctx.globalAlpha = 1-subprog;
+        ctx.fillStyle='#c084d8';
+        ctx.beginPath();
+        ctx.arc(cx+Math.cos(angle2)*dist, cy+Math.sin(angle2)*dist, 3*(1-subprog), 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // label
+    if (prog > 0.5) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(1,(prog-0.5)*4);
+      drawLabel(ctx,'PHYSICS CLEARED! 🚀','#c084d8', H*0.82);
+      ctx.restore();
+    }
+
+    t++;
+    if (t < DURATION) celebRAF = requestAnimationFrame(frame);
+    else hideCelebCanvas();
   }
+  celebRAF = requestAnimationFrame(frame);
+  setTimeout(hideCelebCanvas, 5000);
 }
 
-// ── CHEMISTRY: FLASK EXPLOSION ──
-function drawChemScene(){
-  const svg=document.getElementById('chemAnimSvg');
-  svg.innerHTML=`
-    <!-- Flask 1 (left, moving right) -->
-    <g id="flask1">
-      <animateTransform attributeName="transform" type="translate" from="-60 0" to="0 0" dur=".8s" fill="freeze" calcMode="spline" keySplines="0.4,0,0.2,1"/>
-      <rect x="55" y="80" width="20" height="30" rx="3" fill="#3498db" opacity=".9"/>
-      <ellipse cx="65" cy="128" rx="28" ry="18" fill="#3498db" opacity=".9"/>
-      <rect x="60" y="68" width="10" height="15" fill="#aaa" rx="2"/>
-      <ellipse cx="65" cy="120" rx="14" ry="8" fill="#5bc8f5" opacity=".5"/>
-      <!-- Bubbles -->
-      <circle cx="60" cy="115" r="3" fill="white" opacity=".6"><animate attributeName="cy" values="115;100;115" dur=".8s" repeatCount="indefinite"/></circle>
-      <circle cx="70" cy="120" r="2" fill="white" opacity=".5"><animate attributeName="cy" values="120;105;120" dur="1s" repeatCount="indefinite"/></circle>
-    </g>
-    <!-- Flask 2 (right, moving left) -->
-    <g id="flask2">
-      <animateTransform attributeName="transform" type="translate" from="60 0" to="0 0" dur=".8s" fill="freeze" calcMode="spline" keySplines="0.4,0,0.2,1"/>
-      <rect x="175" y="80" width="20" height="30" rx="3" fill="#e74c3c" opacity=".9"/>
-      <ellipse cx="185" cy="128" rx="28" ry="18" fill="#e74c3c" opacity=".9"/>
-      <rect x="180" y="68" width="10" height="15" fill="#aaa" rx="2"/>
-      <ellipse cx="185" cy="120" rx="14" ry="8" fill="#ff9999" opacity=".5"/>
-      <circle cx="180" cy="115" r="3" fill="white" opacity=".6"><animate attributeName="cy" values="115;100;115" dur=".9s" repeatCount="indefinite"/></circle>
-    </g>
-    <!-- Explosion (appears after .7s) -->
-    <g opacity="0">
-      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.05;0.7;1" dur="1.5s" begin=".75s" fill="freeze"/>
-      <circle cx="150" cy="110" r="0" fill="orange" opacity=".8"><animate attributeName="r" values="0;55" dur=".3s" begin=".75s" fill="freeze"/></circle>
-      <circle cx="150" cy="110" r="0" fill="yellow" opacity=".7"><animate attributeName="r" values="0;35" dur=".25s" begin=".78s" fill="freeze"/></circle>
-      <circle cx="150" cy="110" r="0" fill="white" opacity=".9"><animate attributeName="r" values="0;18" dur=".2s" begin=".8s" fill="freeze"/></circle>
-      <!-- Splatter particles -->
-      ${[0,30,60,90,120,150,180,210,240,270,300,330].map(a=>`
-        <line x1="150" y1="110" x2="${150+Math.cos(a*Math.PI/180)*70}" y2="${110+Math.sin(a*Math.PI/180)*70}"
-          stroke="${['#ff6b6b','#ffd93d','#6bcb77','#4d96ff'][Math.floor(a/90)]}" stroke-width="3" stroke-linecap="round" opacity=".8">
-          <animate attributeName="x2" values="150;${150+Math.cos(a*Math.PI/180)*70}" dur=".25s" begin="${.75+Math.random()*.1}s" fill="freeze"/>
-          <animate attributeName="y2" values="110;${110+Math.sin(a*Math.PI/180)*70}" dur=".25s" begin="${.75+Math.random()*.1}s" fill="freeze"/>
-        </line>`).join('')}
-      <text x="150" y="210" text-anchor="middle" font-family="'Bebas Neue',sans-serif" font-size="22" fill="#2ecc71" letter-spacing="2">REACTION COMPLETE!</text>
-    </g>
-  `;
+// ── PHYSICS 2: ATOM ──
+function runPhysicsAtom() {
+  const cv = makeCelebCanvas();
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const cx = W/2, cy = H/2 - 40;
+  let t = 0;
+  const DURATION = 200;
+  const ELECTRONS = [
+    {orbitA:160, orbitB:60, tilt:0, speed:0.04, color:'#4d96ff'},
+    {orbitA:160, orbitB:60, tilt:Math.PI/3, speed:0.035, color:'#6bcb77'},
+    {orbitA:160, orbitB:60, tilt:-Math.PI/3, speed:0.045, color:'#ffd93d'},
+  ];
+
+  function frame() {
+    ctx.clearRect(0,0,W,H);
+    const prog = t/DURATION;
+
+    // bg glow
+    const bg = ctx.createRadialGradient(cx,cy,0,cx,cy,220);
+    bg.addColorStop(0,'rgba(80,0,180,0.18)');
+    bg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+    // orbits
+    ELECTRONS.forEach(e=>{
+      ctx.save();
+      ctx.translate(cx,cy);
+      ctx.rotate(e.tilt);
+      ctx.scale(1,e.orbitB/e.orbitA);
+      ctx.beginPath();
+      ctx.arc(0,0,e.orbitA,0,Math.PI*2);
+      ctx.strokeStyle=`${e.color}44`;
+      ctx.lineWidth=1.5;
+      ctx.stroke();
+      ctx.restore();
+    });
+
+    // nucleus
+    const nucGrad=ctx.createRadialGradient(cx,cy,0,cx,cy,28);
+    nucGrad.addColorStop(0,'#fff');
+    nucGrad.addColorStop(0.4,'#ff9f43');
+    nucGrad.addColorStop(1,'rgba(255,80,0,0)');
+    ctx.beginPath(); ctx.arc(cx,cy,22,0,Math.PI*2);
+    ctx.fillStyle=nucGrad; ctx.fill();
+    // protons/neutrons
+    [[-7,-7],[7,-7],[0,8],[-7,7],[7,7]].forEach(([ox,oy],i)=>{
+      ctx.beginPath(); ctx.arc(cx+ox,cy+oy,5,0,Math.PI*2);
+      ctx.fillStyle=i%2===0?'#ff6b6b':'#4d96ff';
+      ctx.fill();
+    });
+
+    // electrons
+    ELECTRONS.forEach(e=>{
+      const angle = t*e.speed;
+      const ex = cx + Math.cos(angle)*e.orbitA*Math.cos(e.tilt) - Math.sin(angle)*(e.orbitB)*Math.sin(e.tilt);
+      const ey = cy + Math.cos(angle)*e.orbitA*Math.sin(e.tilt) + Math.sin(angle)*(e.orbitB)*Math.cos(e.tilt);
+      // trail
+      for(let tr=1;tr<=10;tr++){
+        const ta = angle - tr*0.08;
+        const tex = cx + Math.cos(ta)*e.orbitA*Math.cos(e.tilt) - Math.sin(ta)*(e.orbitB)*Math.sin(e.tilt);
+        const tey = cy + Math.cos(ta)*e.orbitA*Math.sin(e.tilt) + Math.sin(ta)*(e.orbitB)*Math.cos(e.tilt);
+        ctx.save(); ctx.globalAlpha=0.08*(1-tr/10);
+        ctx.beginPath(); ctx.arc(tex,tey,7,0,Math.PI*2);
+        ctx.fillStyle=e.color; ctx.fill(); ctx.restore();
+      }
+      ctx.beginPath(); ctx.arc(ex,ey,8,0,Math.PI*2);
+      ctx.fillStyle=e.color;
+      ctx.shadowColor=e.color; ctx.shadowBlur=14;
+      ctx.fill();
+      ctx.shadowBlur=0;
+    });
+
+    // energy burst at end
+    if (prog > 0.7) {
+      const bp = (prog-0.7)/0.3;
+      for(let i=0;i<16;i++){
+        const a=i*(Math.PI*2/16)+t*0.05;
+        const len=bp*180;
+        ctx.save();
+        ctx.globalAlpha=0.6*(1-bp);
+        ctx.strokeStyle=['#4d96ff','#ffd93d','#6bcb77','#ff6b6b'][i%4];
+        ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.moveTo(cx+Math.cos(a)*30,cy+Math.sin(a)*30);
+        ctx.lineTo(cx+Math.cos(a)*len,cy+Math.sin(a)*len);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    if (prog > 0.5) {
+      ctx.save(); ctx.globalAlpha=Math.min(1,(prog-0.5)*4);
+      drawLabel(ctx,'PHYSICS CLEARED! ⚛️','#4d96ff', H*0.82);
+      ctx.restore();
+    }
+
+    t++;
+    if (t < DURATION) celebRAF = requestAnimationFrame(frame);
+    else hideCelebCanvas();
+  }
+  celebRAF = requestAnimationFrame(frame);
+  setTimeout(hideCelebCanvas, 5000);
+}
+
+// ── PHYSICS 3: NEWTON UNDER TREE ──
+function runPhysicsNewton() {
+  const cv = makeCelebCanvas();
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  let t = 0;
+  const DURATION = 240;
+  let appleY = H*0.28;
+  let appleFalling = false;
+  let appleVY = 0;
+  let appleHit = false;
+  let stars = [];
+  for(let i=0;i<6;i++) stars.push({x:W*0.3+Math.random()*W*0.4, y:H*0.1+Math.random()*H*0.2, r:0, maxR:30+Math.random()*20, a:0});
+
+  function drawTree(bx, by) {
+    // trunk
+    ctx.fillStyle='#5a3a1a';
+    ctx.fillRect(bx-12, by-100, 24, 110);
+    // branches
+    ctx.strokeStyle='#5a3a1a'; ctx.lineWidth=10; ctx.lineCap='round';
+    [[bx,by-100,bx-70,by-160],[bx,by-110,bx+60,by-165],[bx,by-130,bx-40,by-200],[bx,by-130,bx+35,by-195]].forEach(([x1,y1,x2,y2])=>{
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    });
+    // foliage blobs
+    [[bx,by-190,75],[bx-55,by-155,55],[bx+50,by-160,50],[bx-25,by-220,50],[bx+20,by-225,45]].forEach(([fx,fy,fr])=>{
+      const fg=ctx.createRadialGradient(fx,fy,0,fx,fy,fr);
+      fg.addColorStop(0,'#27ae60'); fg.addColorStop(1,'#1a5c30');
+      ctx.beginPath(); ctx.arc(fx,fy,fr,0,Math.PI*2);
+      ctx.fillStyle=fg; ctx.fill();
+    });
+  }
+
+  function drawNewton(nx, ny, surprised) {
+    // body/coat
+    ctx.fillStyle='#2c3e50';
+    ctx.beginPath(); ctx.ellipse(nx,ny+20,22,35,0,0,Math.PI*2); ctx.fill();
+    // legs
+    ctx.fillStyle='#34495e';
+    [[nx-10,ny+45,nx-12,ny+80],[nx+10,ny+45,nx+12,ny+80]].forEach(([x1,y1,x2,y2])=>{
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+      ctx.lineWidth=12; ctx.strokeStyle='#2c3e50'; ctx.lineCap='round'; ctx.stroke();
+    });
+    // shoes
+    [[nx-12,ny+80],[nx+12,ny+80]].forEach(([sx,sy])=>{
+      ctx.fillStyle='#1a1a1a'; ctx.beginPath(); ctx.ellipse(sx,sy+5,10,6,0,0,Math.PI*2); ctx.fill();
+    });
+    // arms - sitting reading
+    ctx.strokeStyle='#2c3e50'; ctx.lineWidth=10; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(nx-22,ny+5); ctx.lineTo(nx-38,ny+25); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(nx+22,ny+5); ctx.lineTo(nx+38,ny+25); ctx.stroke();
+    // book
+    ctx.fillStyle='#c0392b';
+    ctx.beginPath(); ctx.roundRect(nx-20,ny+20,40,28,3); ctx.fill();
+    ctx.fillStyle='#f0e6d0'; ctx.font='8px monospace'; ctx.textAlign='center';
+    ctx.fillText('Principia',nx,ny+36);
+    // head
+    ctx.fillStyle='#f0c080';
+    ctx.beginPath(); ctx.arc(nx,ny-25,22,0,Math.PI*2); ctx.fill();
+    // wig
+    ctx.fillStyle='#e8e0d0';
+    ctx.beginPath(); ctx.ellipse(nx,ny-35,26,18,0,0,Math.PI); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(nx-26,ny-35); ctx.bezierCurveTo(nx-36,ny-10,nx-28,ny+5,nx-14,ny+10);
+    ctx.lineWidth=8; ctx.strokeStyle='#e8e0d0'; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(nx+26,ny-35); ctx.bezierCurveTo(nx+36,ny-10,nx+28,ny+5,nx+14,ny+10);
+    ctx.stroke();
+    // face
+    ctx.fillStyle='#1a1410';
+    ctx.beginPath(); ctx.arc(nx-7,ny-27,3,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(nx+7,ny-27,3,0,Math.PI*2); ctx.fill();
+    if (surprised) {
+      ctx.beginPath(); ctx.arc(nx,ny-18,5,0,Math.PI*2); ctx.fill();
+      // exclamation
+      ctx.font='bold 28px sans-serif'; ctx.fillStyle='#f1c40f';
+      ctx.textAlign='center'; ctx.fillText('!',nx+40,ny-50);
+    } else {
+      ctx.beginPath(); ctx.arc(nx,ny-15,5,0.2,Math.PI-0.2); ctx.strokeStyle='#1a1410'; ctx.lineWidth=2; ctx.stroke();
+    }
+  }
+
+  function frame() {
+    ctx.clearRect(0,0,W,H);
+    const prog = t/DURATION;
+
+    // sky
+    const sky=ctx.createLinearGradient(0,0,0,H);
+    sky.addColorStop(0,'#87ceeb'); sky.addColorStop(1,'#c8e6f0');
+    ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+
+    // ground
+    const grd=ctx.createLinearGradient(0,H*0.75,0,H);
+    grd.addColorStop(0,'#27ae60'); grd.addColorStop(1,'#1e8449');
+    ctx.fillStyle=grd; ctx.fillRect(0,H*0.75,W,H*0.25);
+
+    // clouds
+    [[W*0.2,H*0.15],[W*0.6,H*0.1],[W*0.8,H*0.2]].forEach(([clx,cly])=>{
+      [0,20,-15,30,-10].forEach((ox,i)=>{
+        ctx.beginPath(); ctx.arc(clx+ox,cly+i*2,18-i*2,0,Math.PI*2);
+        ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.fill();
+      });
+    });
+
+    const treex = W*0.5, treey = H*0.75;
+    drawTree(treex, treey);
+
+    // apple on tree - drops at t=60
+    if (t === 60) { appleFalling=true; }
+    if (!appleFalling) {
+      ctx.beginPath(); ctx.arc(treex-10, appleY, 12, 0, Math.PI*2);
+      ctx.fillStyle='#e74c3c'; ctx.fill();
+      ctx.fillStyle='#27ae60'; ctx.fillRect(treex-11,appleY-22,3,10);
+    } else if (!appleHit) {
+      appleVY += 0.6;
+      appleY += appleVY;
+      ctx.beginPath(); ctx.arc(treex-10, appleY, 12, 0, Math.PI*2);
+      ctx.fillStyle='#e74c3c'; ctx.fill();
+      ctx.fillStyle='#27ae60'; ctx.fillRect(treex-11,appleY-22,3,10);
+      if (appleY > treey - 55) { appleHit=true; }
+    }
+
+    // Newton sitting against tree
+    const newtonY = treey - 50;
+    drawNewton(treex + 80, newtonY, appleHit);
+
+    // stars/eureka burst when apple hits
+    if (appleHit) {
+      stars.forEach(s=>{
+        s.r = Math.min(s.r+2, s.maxR);
+        s.a = Math.min(s.a+0.08, 1);
+        ctx.save();
+        ctx.globalAlpha=s.a*(1-Math.max(0,(prog-0.8)/0.2));
+        ctx.strokeStyle='#f1c40f';
+        ctx.lineWidth=2;
+        for(let sp=0;sp<5;sp++){
+          const sa=sp*(Math.PI*2/5)-Math.PI/2;
+          const sb=sa+Math.PI/5;
+          ctx.beginPath();
+          ctx.moveTo(s.x+Math.cos(sa)*s.r,s.y+Math.sin(sa)*s.r);
+          ctx.lineTo(s.x+Math.cos(sb)*s.r*0.4,s.y+Math.sin(sb)*s.r*0.4);
+          ctx.stroke();
+        }
+        ctx.restore();
+      });
+
+      // "EUREKA!" text
+      ctx.save();
+      ctx.globalAlpha=Math.min(1,(prog-0.3)/0.2);
+      ctx.font='bold 36px "Bebas Neue",sans-serif';
+      ctx.fillStyle='#f39c12';
+      ctx.textAlign='center';
+      ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=8;
+      ctx.fillText('EUREKA! 🍎', W/2, H*0.2);
+      ctx.restore();
+    }
+
+    if (prog > 0.7) {
+      ctx.save(); ctx.globalAlpha=Math.min(1,(prog-0.7)*4);
+      drawLabel(ctx,'PHYSICS CLEARED! 🍎','#e67e22', H*0.92);
+      ctx.restore();
+    }
+
+    t++;
+    if (t < DURATION) celebRAF = requestAnimationFrame(frame);
+    else hideCelebCanvas();
+  }
+  celebRAF = requestAnimationFrame(frame);
+  setTimeout(hideCelebCanvas, 6000);
+}
+
+// ── CHEMISTRY: CONICAL FLASKS MIXING ──
+function runChemFlasks() {
+  const cv = makeCelebCanvas();
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  let t = 0;
+  const DURATION = 250;
+  let exploded = false;
+  let particles = [];
+  let bubbles1 = [], bubbles2 = [];
+  for(let i=0;i<8;i++){
+    bubbles1.push({x:0.15+Math.random()*0.06, y:0.55+Math.random()*0.12, r:3+Math.random()*4, vy:-0.0015});
+    bubbles2.push({x:0.79+Math.random()*0.06, y:0.55+Math.random()*0.12, r:3+Math.random()*4, vy:-0.0015});
+  }
+
+  function drawConicalFlask(fx, fy, scale, color, glowColor, liquid, label) {
+    ctx.save();
+    ctx.translate(fx*W, fy*H);
+    ctx.scale(scale,scale);
+    // neck
+    ctx.fillStyle='rgba(200,230,255,0.3)';
+    ctx.strokeStyle='rgba(255,255,255,0.8)';
+    ctx.lineWidth=2;
+    ctx.beginPath(); ctx.rect(-15,-90,30,50); ctx.fill(); ctx.stroke();
+    // stopper
+    ctx.fillStyle='#7f8c8d';
+    ctx.beginPath(); ctx.roundRect(-12,-95,24,10,3); ctx.fill();
+    // flask body
+    ctx.beginPath();
+    ctx.moveTo(-15,-40);
+    ctx.lineTo(-60,60);
+    ctx.arc(0,60,60,-Math.PI,0);
+    ctx.lineTo(15,-40);
+    ctx.closePath();
+    ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=2.5;
+    ctx.fillStyle='rgba(200,230,255,0.15)';
+    ctx.fill(); ctx.stroke();
+    // liquid
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(-15,-40);
+    ctx.lineTo(-60,60);
+    ctx.arc(0,60,60,-Math.PI,0);
+    ctx.lineTo(15,-40);
+    ctx.closePath();
+    ctx.clip();
+    const liqGrad=ctx.createLinearGradient(0,liquid,0,120);
+    liqGrad.addColorStop(0,glowColor+'99');
+    liqGrad.addColorStop(1,color+'cc');
+    ctx.fillStyle=liqGrad;
+    ctx.fillRect(-65,liquid,130,120-liquid+60);
+    // wave on surface
+    ctx.beginPath();
+    ctx.moveTo(-60,liquid);
+    for(let wx=-60;wx<=60;wx+=5){
+      ctx.lineTo(wx, liquid + 3*Math.sin((wx+t*3)*0.15));
+    }
+    ctx.strokeStyle=glowColor+'88'; ctx.lineWidth=2; ctx.stroke();
+    ctx.restore();
+    // glow
+    ctx.shadowColor=color; ctx.shadowBlur=20;
+    ctx.beginPath(); ctx.arc(0,60,60,0,Math.PI*2);
+    ctx.strokeStyle=color+'44'; ctx.lineWidth=3; ctx.stroke();
+    ctx.shadowBlur=0;
+    // label
+    ctx.fillStyle='white'; ctx.font='bold 20px "DM Mono",monospace';
+    ctx.textAlign='center'; ctx.fillText(label, 0, 30);
+    ctx.restore();
+  }
+
+  function frame() {
+    ctx.clearRect(0,0,W,H);
+    const prog = t/DURATION;
+
+    // dark lab background
+    const bg=ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'#0a0a1a'); bg.addColorStop(1,'#0d1520');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+    // lab table
+    ctx.fillStyle='#2c1810';
+    ctx.beginPath(); ctx.roundRect(W*0.05,H*0.72,W*0.9,H*0.08,6); ctx.fill();
+    ctx.fillStyle='#3d2418';
+    ctx.beginPath(); ctx.roundRect(W*0.05,H*0.72,W*0.9,H*0.015,6); ctx.fill();
+
+    if (!exploded) {
+      // Flask positions — move toward center
+      const moveProgress = Math.min(1, prog/0.55);
+      const ease = 1 - Math.pow(1-moveProgress,3);
+      const f1x = 0.18 - ease*0.10;
+      const f2x = 0.82 + ease*0.10 - ease*0.20;
+
+      drawConicalFlask(f1x, 0.62, 1.1, '#3498db','#5dade2',-20,'HCl');
+      drawConicalFlask(f2x, 0.62, 1.1, '#e74c3c','#e57373',-20,'NaOH');
+
+      // bubbles
+      bubbles1.forEach(b=>{
+        b.y+=b.vy; if(b.y<0.35){b.y=0.55+Math.random()*0.1;}
+        ctx.save(); ctx.globalAlpha=0.5;
+        ctx.strokeStyle='#5dade2'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.arc(f1x*W+b.x*W*0.1,b.y*H,b.r,0,Math.PI*2); ctx.stroke();
+        ctx.restore();
+      });
+      bubbles2.forEach(b=>{
+        b.y+=b.vy; if(b.y<0.35){b.y=0.55+Math.random()*0.1;}
+        ctx.save(); ctx.globalAlpha=0.5;
+        ctx.strokeStyle='#e57373'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.arc(f2x*W+b.x*W*0.05,b.y*H,b.r,0,Math.PI*2); ctx.stroke();
+        ctx.restore();
+      });
+
+      // pouring effect when close
+      if (moveProgress > 0.7) {
+        const pourAlpha = (moveProgress-0.7)/0.3;
+        ctx.save(); ctx.globalAlpha=pourAlpha*0.7;
+        const pourGrad=ctx.createLinearGradient(W*0.38,H*0.4,W*0.62,H*0.4);
+        pourGrad.addColorStop(0,'#3498db88');
+        pourGrad.addColorStop(0.5,'#9b59b688');
+        pourGrad.addColorStop(1,'#e74c3c88');
+        ctx.fillStyle=pourGrad;
+        ctx.beginPath(); ctx.ellipse(W*0.5,H*0.55,W*0.12*pourAlpha,H*0.04,0,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+
+      if (moveProgress >= 1) { exploded=true; t=120; }
+    } else {
+      // EXPLOSION
+      const ep = Math.min(1,(t-120)/80);
+
+      if (particles.length===0) {
+        for(let i=0;i<80;i++){
+          const a=Math.random()*Math.PI*2;
+          const spd=3+Math.random()*8;
+          particles.push({
+            x:W*0.5, y:H*0.55, vx:Math.cos(a)*spd, vy:Math.sin(a)*spd-4,
+            color:['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff9ff3','#fff'][Math.floor(Math.random()*6)],
+            r:4+Math.random()*6, life:1, decay:0.012+Math.random()*0.008
+          });
+        }
+      }
+
+      // shockwave
+      ctx.save();
+      ctx.globalAlpha=Math.max(0,0.8-ep*2);
+      ctx.beginPath(); ctx.arc(W*0.5,H*0.55,ep*300,0,Math.PI*2);
+      ctx.strokeStyle='rgba(255,200,100,0.8)'; ctx.lineWidth=6; ctx.stroke();
+      ctx.restore();
+
+      // flash
+      if (ep < 0.15) {
+        ctx.save(); ctx.globalAlpha=(0.15-ep)/0.15*0.9;
+        ctx.fillStyle='white'; ctx.fillRect(0,0,W,H); ctx.restore();
+      }
+
+      // explosion center
+      const expGrad=ctx.createRadialGradient(W*0.5,H*0.55,0,W*0.5,H*0.55,160*ep);
+      expGrad.addColorStop(0,'rgba(255,255,200,'+Math.max(0,0.9-ep)+')');
+      expGrad.addColorStop(0.3,'rgba(255,120,0,'+Math.max(0,0.7-ep)+')');
+      expGrad.addColorStop(1,'rgba(200,50,0,0)');
+      ctx.beginPath(); ctx.arc(W*0.5,H*0.55,160*ep,0,Math.PI*2);
+      ctx.fillStyle=expGrad; ctx.fill();
+
+      // particles
+      particles.forEach(p=>{
+        p.x+=p.vx; p.y+=p.vy; p.vy+=0.15;
+        p.life-=p.decay;
+        if(p.life>0){
+          ctx.save(); ctx.globalAlpha=p.life;
+          ctx.fillStyle=p.color;
+          ctx.shadowColor=p.color; ctx.shadowBlur=8;
+          ctx.beginPath(); ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2); ctx.fill();
+          ctx.restore();
+        }
+      });
+
+      // smoke
+      for(let s=0;s<5;s++){
+        ctx.save();
+        ctx.globalAlpha=ep*0.25;
+        ctx.fillStyle='rgba(180,180,180,0.3)';
+        ctx.beginPath(); ctx.arc(W*0.5+(s-2)*40,H*0.55-ep*100-s*20,30+ep*40+s*15,0,Math.PI*2);
+        ctx.fill(); ctx.restore();
+      }
+
+      // DONE! text
+      ctx.save();
+      const textAlpha = Math.min(1, Math.max(0,(ep-0.4)/0.3));
+      ctx.globalAlpha=textAlpha;
+      ctx.font='bold 56px "Bebas Neue",sans-serif';
+      ctx.textAlign='center';
+      ctx.fillStyle='#2ecc71';
+      ctx.shadowColor='rgba(46,204,113,0.8)'; ctx.shadowBlur=20;
+      ctx.fillText('REACTION COMPLETE! ⚗️', W/2, H*0.3);
+      ctx.shadowBlur=0;
+      ctx.font='24px "DM Mono",monospace';
+      ctx.fillStyle='#f1c40f';
+      ctx.fillText('HCl + NaOH → NaCl + H₂O', W/2, H*0.38);
+      ctx.restore();
+    }
+
+    t++;
+    if (t < DURATION) celebRAF = requestAnimationFrame(frame);
+    else hideCelebCanvas();
+  }
+  celebRAF = requestAnimationFrame(frame);
+  setTimeout(hideCelebCanvas, 7000);
 }
 
 // ── MATHS: BLACKBOARD ──
-function drawMathsScene(){
-  const svg=document.getElementById('mathsAnimSvg');
-  svg.innerHTML=`
-    <!-- Blackboard -->
-    <rect x="10" y="10" width="340" height="200" rx="6" fill="#1a3a1a"/>
-    <rect x="10" y="10" width="340" height="200" rx="6" fill="none" stroke="#5a3a1a" stroke-width="8"/>
-    <rect x="18" y="18" width="324" height="184" rx="4" fill="none" stroke="#2a5a2a" stroke-width="1.5"/>
-    <!-- Chalk ledge -->
-    <rect x="10" y="206" width="340" height="12" rx="3" fill="#8B6914"/>
-    <rect x="30" y="207" width="24" height="9" rx="2" fill="#f0f0e0" opacity=".9"/>
-    <rect x="64" y="207" width="16" height="9" rx="2" fill="#f0f0e0" opacity=".7"/>
+function runMathsBlackboard() {
+  const cv = makeCelebCanvas();
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  let t = 0;
+  const DURATION = 220;
+  const equations = [
+    {text:'∫₀^∞ e^(-x²) dx = √π/2', color:'#ffffff'},
+    {text:'lim(x→0) sin(x)/x = 1', color:'#aaffaa'},
+    {text:'d/dx[∫ₐˣ f(t)dt] = f(x)', color:'#ffffaa'},
+    {text:'e^(iπ) + 1 = 0', color:'#aaaaff'},
+    {text:'∑(1/n²) = π²/6', color:'#ffaaaa'},
+  ];
+  let stickAngle = 0;
 
-    <!-- Complex equation appearing line by line -->
-    <text x="30" y="55" font-family="'DM Mono',monospace" font-size="13" fill="white" opacity="0">
-      ∫₀^∞ e^(-x²) dx = √π/2
-      <animate attributeName="opacity" values="0;1" dur=".3s" begin=".2s" fill="freeze"/>
-    </text>
-    <text x="30" y="85" font-family="'DM Mono',monospace" font-size="13" fill="#aaffaa" opacity="0">
-      lim(x→0) [sin(x)/x] = 1
-      <animate attributeName="opacity" values="0;1" dur=".3s" begin=".6s" fill="freeze"/>
-    </text>
-    <text x="30" y="115" font-family="'DM Mono',monospace" font-size="12" fill="#ffffaa" opacity="0">
-      d/dx[∫ₐˣ f(t)dt] = f(x)
-      <animate attributeName="opacity" values="0;1" dur=".3s" begin="1.0s" fill="freeze"/>
-    </text>
-    <text x="30" y="145" font-family="'DM Mono',monospace" font-size="13" fill="#aaaaff" opacity="0">
-      e^(iπ) + 1 = 0  ✓
-      <animate attributeName="opacity" values="0;1" dur=".3s" begin="1.4s" fill="freeze"/>
-    </text>
-    <text x="30" y="178" font-family="'DM Mono',monospace" font-size="13" fill="#ffaaaa" opacity="0">
-      ∑(n=1→∞) 1/n² = π²/6
-      <animate attributeName="opacity" values="0;1" dur=".3s" begin="1.8s" fill="freeze"/>
-    </text>
+  function frame() {
+    ctx.clearRect(0,0,W,H);
+    const prog = t/DURATION;
+    const bx=W*0.5-180, by=H*0.15, bw=360, bh=220;
 
-    <!-- Big tick appearing -->
-    <text x="270" y="170" font-size="72" fill="#2ecc71" opacity="0" font-family="sans-serif">✓
-      <animate attributeName="opacity" values="0;1" dur=".4s" begin="2.0s" fill="freeze"/>
-      <animateTransform attributeName="transform" type="scale" values="0.5;1.1;1" keyTimes="0;0.6;1" dur=".5s" begin="2.0s" fill="freeze" additive="sum"/>
-    </text>
+    // room bg
+    ctx.fillStyle='#1a1008'; ctx.fillRect(0,0,W,H);
 
-    <!-- Stick figure celebrating -->
-    <g opacity="0">
-      <animate attributeName="opacity" values="0;1" dur=".3s" begin="2.2s" fill="freeze"/>
-      <!-- body -->
-      <circle cx="310" cy="50" r="10" fill="none" stroke="#f0c060" stroke-width="2.5"/>
-      <line x1="310" y1="60" x2="310" y2="90" stroke="#f0c060" stroke-width="2.5"/>
-      <!-- arms raised -->
-      <line x1="310" y1="68" x2="290" y2="52" stroke="#f0c060" stroke-width="2.5">
-        <animate attributeName="y2" values="52;60;52" dur=".4s" repeatCount="indefinite"/>
-        <animate attributeName="x2" values="290;288;290" dur=".4s" repeatCount="indefinite"/>
-      </line>
-      <line x1="310" y1="68" x2="330" y2="52" stroke="#f0c060" stroke-width="2.5">
-        <animate attributeName="y2" values="52;60;52" dur=".4s" repeatCount="indefinite"/>
-        <animate attributeName="x2" values="330;332;330" dur=".4s" repeatCount="indefinite"/>
-      </line>
-      <!-- legs -->
-      <line x1="310" y1="90" x2="298" y2="112" stroke="#f0c060" stroke-width="2.5"/>
-      <line x1="310" y1="90" x2="322" y2="112" stroke="#f0c060" stroke-width="2.5"/>
-      <!-- confetti from person -->
-      <circle cx="295" cy="46" r="3" fill="#ff6b6b"><animate attributeName="cy" values="46;30;46" dur=".5s" repeatCount="indefinite"/></circle>
-      <circle cx="325" cy="44" r="2" fill="#ffd93d"><animate attributeName="cy" values="44;28;44" dur=".6s" repeatCount="indefinite"/></circle>
-      <circle cx="308" cy="38" r="2" fill="#6bcb77"><animate attributeName="cy" values="38;22;38" dur=".55s" repeatCount="indefinite"/></circle>
-    </g>
-  `;
+    // blackboard
+    ctx.fillStyle='#1a3a1a';
+    ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,6); ctx.fill();
+    ctx.strokeStyle='#5a3a1a'; ctx.lineWidth=10;
+    ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,6); ctx.stroke();
+    ctx.strokeStyle='#2a5a2a'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.roundRect(bx+8,by+8,bw-16,bh-16,4); ctx.stroke();
+    // chalk ledge
+    ctx.fillStyle='#8B6914';
+    ctx.beginPath(); ctx.roundRect(bx,by+bh,bw,12,3); ctx.fill();
+    [[bx+20,8],[bx+54,6],[bx+100,9]].forEach(([lx,lw])=>{
+      ctx.fillStyle='#f0f0e0';
+      ctx.beginPath(); ctx.roundRect(lx,by+bh+2,lw,8,2); ctx.fill();
+    });
+
+    // equations appear one by one
+    equations.forEach((eq,i)=>{
+      const showAt = i/equations.length*0.7;
+      if (prog > showAt) {
+        const alpha = Math.min(1,(prog-showAt)/0.08);
+        ctx.save(); ctx.globalAlpha=alpha;
+        ctx.font=`${i===2?13:14}px "DM Mono",monospace`;
+        ctx.fillStyle=eq.color;
+        ctx.textAlign='left';
+        ctx.fillText(eq.text, bx+20, by+40+i*34);
+        ctx.restore();
+      }
+    });
+
+    // big tick
+    if (prog > 0.65) {
+      const ta = Math.min(1,(prog-0.65)/0.15);
+      ctx.save(); ctx.globalAlpha=ta;
+      ctx.font='80px sans-serif'; ctx.fillStyle='#2ecc71';
+      ctx.textAlign='center';
+      ctx.shadowColor='#2ecc71'; ctx.shadowBlur=20;
+      ctx.fillText('✓', bx+bw-60, by+bh-30);
+      ctx.shadowBlur=0;
+      ctx.restore();
+    }
+
+    // stick figure celebrating next to board
+    if (prog > 0.5) {
+      const sa = Math.min(1,(prog-0.5)/0.15);
+      stickAngle = Math.sin(t*0.12)*0.3;
+      const sx=W*0.5+240, sy=H*0.15+200;
+      ctx.save(); ctx.globalAlpha=sa;
+      // head
+      ctx.fillStyle='#f0c080';
+      ctx.beginPath(); ctx.arc(sx,sy-80,16,0,Math.PI*2); ctx.fill();
+      // body
+      ctx.strokeStyle='#f0c080'; ctx.lineWidth=4; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(sx,sy-64); ctx.lineTo(sx,sy-10); ctx.stroke();
+      // arms wave up
+      const armAng = Math.sin(t*0.15)*0.6 + 0.8;
+      ctx.beginPath(); ctx.moveTo(sx,sy-50);
+      ctx.lineTo(sx-30*Math.cos(armAng),sy-50-30*Math.sin(armAng)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(sx,sy-50);
+      ctx.lineTo(sx+30*Math.cos(armAng),sy-50-30*Math.sin(armAng)); ctx.stroke();
+      // legs
+      ctx.beginPath(); ctx.moveTo(sx,sy-10); ctx.lineTo(sx-14,sy+20); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(sx,sy-10); ctx.lineTo(sx+14,sy+20); ctx.stroke();
+      // chalk in hand
+      ctx.fillStyle='#f0f0e0';
+      ctx.beginPath(); ctx.roundRect(sx-42*Math.cos(armAng)-5,sy-50-42*Math.sin(armAng),4,12,2); ctx.fill();
+      // confetti from person
+      [[-20,-20],[15,-25],[25,-10],[-10,-30]].forEach(([ox,oy],ci)=>{
+        ctx.fillStyle=['#ff6b6b','#ffd93d','#6bcb77','#4d96ff'][ci];
+        ctx.beginPath(); ctx.arc(sx+ox,sy-80+oy+Math.sin(t*0.1+ci)*8,3,0,Math.PI*2); ctx.fill();
+      });
+      ctx.restore();
+    }
+
+    // label
+    if (prog > 0.7) {
+      ctx.save(); ctx.globalAlpha=Math.min(1,(prog-0.7)*4);
+      drawLabel(ctx,'MATHS SOLVED! 🎉','#f0b429', H*0.85);
+      ctx.restore();
+    }
+
+    t++;
+    if (t < DURATION) celebRAF = requestAnimationFrame(frame);
+    else hideCelebCanvas();
+  }
+  celebRAF = requestAnimationFrame(frame);
+  setTimeout(hideCelebCanvas, 6000);
 }
 
 // ── CONFETTI ──
