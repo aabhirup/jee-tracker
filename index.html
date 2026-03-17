@@ -275,6 +275,7 @@ h1 span{color:var(--physical);}
     <div class="add-exam-form">
       <input id="examName" placeholder="Exam name (e.g. JEE Main)"/>
       <input id="examDate" type="date"/>
+      <input id="examTime" type="time" placeholder="Exam time (optional)"/>
       <div class="exam-colors" id="examColors"></div>
       <button class="add-note-btn" onclick="addExam()" style="width:100%;padding:7px;">Add Exam</button>
     </div>
@@ -646,8 +647,9 @@ function renderNotepad() {
   }
 }
 function saveNotepad() {
-  state.notepad=document.getElementById('notepadText').value;
-  save();
+  state.notepad = document.getElementById('notepadText').value;
+  try { localStorage.setItem(SK, JSON.stringify(state)); } catch(e) {}
+  pushToCloud();
 }
 function addNoteTask() {
   const inp=document.getElementById('noteTaskInput');
@@ -657,8 +659,14 @@ function addNoteTask() {
   inp.value=''; save(); renderNotepad();
 }
 function toggleNoteTask(i) {
-  state.noteTasks[i].done=!state.noteTasks[i].done;
-  if (state.noteTasks[i].done) state.noteTasks[i].doneAt=Date.now();
+  state.noteTasks[i].done = !state.noteTasks[i].done;
+  if (state.noteTasks[i].done) {
+    // instantly remove completed task with a brief flash
+    setTimeout(() => {
+      state.noteTasks.splice(i, 1);
+      save(); renderNotepad();
+    }, 400);
+  }
   save(); renderNotepad();
 }
 function deleteNoteTask(i) {
@@ -707,22 +715,55 @@ function renderExams() {
       <div class="exam-dot" style="background:${ex.color}"></div>
       <div style="flex:1">
         <div class="exam-name">${escHtml(ex.name)}</div>
-        <div class="exam-date">${ex.date}</div>
+        <div class="exam-date">${ex.date}${ex.time ? ' · ⏰ '+ex.time : ''}</div>
         <div class="exam-countdown">${countdown}</div>
       </div>
-      <div class="exam-del" onclick="deleteExam(${i})">✕</div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+        <div class="exam-del" onclick="deleteExam(${i})" title="Delete" style="font-size:10px;cursor:pointer;opacity:.4;transition:opacity .15s;" onmouseover="this.style.opacity=1;this.style.color='#e74c3c'" onmouseout="this.style.opacity=.4;this.style.color=''">✕</div>
+        <div onclick="editExam(${i})" title="Edit" style="font-size:13px;cursor:pointer;opacity:.4;transition:opacity .15s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.4">✏️</div>
+      </div>
     `;
     list.appendChild(d);
   });
 }
+
+function editExam(i) {
+  const ex = state.exams[i];
+  // Pre-fill the add form with existing data
+  document.getElementById('examName').value = ex.name;
+  document.getElementById('examDate').value = ex.date;
+  document.getElementById('examTime').value = ex.time||'';
+  selectedExamColor = ex.color;
+  renderExamColors();
+  // Remove the old exam so when user clicks Add it replaces it
+  state.exams.splice(i, 1);
+  save(); renderExams();
+  // Change button to Update
+  const btn = document.querySelector('#examsPanel .add-note-btn');
+  if (btn) { btn.textContent = '✓ Update Exam'; btn.style.background='#27ae60'; setTimeout(()=>{btn.textContent='Add Exam';btn.style.background='';}, 8000); }
+  // Scroll panel to bottom so form is visible
+  const panel = document.getElementById('examsPanel').querySelector('.panel-body');
+  if (panel) panel.scrollTop = panel.scrollHeight;
+  // Flash/highlight the form
+  const form = document.querySelector('.add-exam-form');
+  if (form) {
+    form.style.outline = '2px solid #27ae60';
+    form.style.borderRadius = '6px';
+    setTimeout(()=>form.style.outline='', 2000);
+  }
+  // Focus the name field
+  setTimeout(()=>document.getElementById('examName').focus(), 100);
+}
 function addExam() {
   const name=document.getElementById('examName').value.trim();
   const date=document.getElementById('examDate').value;
+  const time=document.getElementById('examTime').value;
   if (!name||!date) return;
   if (!state.exams) state.exams=[];
-  state.exams.push({name,date,color:selectedExamColor});
+  state.exams.push({name,date,time,color:selectedExamColor});
   document.getElementById('examName').value='';
   document.getElementById('examDate').value='';
+  document.getElementById('examTime').value='';
   save(); renderExams();
 }
 function deleteExam(i) {
