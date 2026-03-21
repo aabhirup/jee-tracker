@@ -10,16 +10,72 @@
   --bg:#f5f0e8;--paper:#faf7f2;--ink:#1a1410;--muted:#8a7f72;
   --border:#d4c9b8;--physical:#c0392b;--inorganic:#1a5276;
   --organic:#1e8449;--physics:#7b2d8b;--maths:#c67c00;
+  --general:#16a085;
   --panel-w:300px;
 }
 [data-theme="dark"]{
   --bg:#0e0e12;--paper:#16161e;--ink:#e8e4dc;--muted:#6b6b80;
   --border:#2a2a3a;--physical:#e05c5c;--inorganic:#5b9bd5;
-  --organic:#4caf7d;--physics:#c084d8;--maths:#f0b429;
+  --organic:#4caf7d;--physics:#c084d8;--maths:#f0b429;--general:#1abc9c;
 }
+
+/* General section */
+.section-pill.general{color:var(--general);}
+.general .color-bar{background:var(--general);}
+
+/* Exam panel tabs */
+.exam-tabs{display:flex;gap:0;margin-bottom:14px;border:1.5px solid var(--border);border-radius:6px;overflow:hidden;}
+.exam-tab{flex:1;padding:7px 4px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.8px;text-transform:uppercase;text-align:center;cursor:pointer;transition:background .2s,color .2s;color:var(--muted);background:transparent;border:none;}
+.exam-tab.active{background:var(--ink);color:var(--bg);}
+
+/* Exam panel sliding views */
+.exam-views-wrap{overflow:hidden;position:relative;}
+.exam-views{display:flex;transition:transform .35s cubic-bezier(.4,0,.2,1);}
+.exam-view{min-width:100%;flex-shrink:0;}
+.exam-views.show-history{transform:translateX(-100%);}
+
+/* History table */
+.hist-table{width:100%;border-collapse:collapse;margin-bottom:10px;}
+.hist-table th{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:6px 8px;border-bottom:1.5px solid var(--border);text-align:left;}
+.hist-table td{font-size:12px;padding:6px 8px;border-bottom:1px solid rgba(128,128,128,.08);color:var(--ink);}
+.hist-table tr:last-child td{border-bottom:none;}
+.hist-table input{background:transparent;border:none;outline:none;font-size:12px;color:var(--ink);font-family:'DM Sans',sans-serif;width:100%;}
+.hist-table input::placeholder{color:var(--muted);}
+.hist-add-row{display:flex;gap:6px;margin-top:8px;}
+.hist-add-row input{flex:1;background:transparent;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:11px;color:var(--ink);font-family:'DM Sans',sans-serif;outline:none;}
+.hist-add-row input:focus{border-color:var(--muted);}
+.hist-add-row input::placeholder{color:var(--muted);}
+.hist-btn{background:var(--ink);color:var(--bg);border:none;border-radius:4px;padding:5px 10px;font-family:'DM Mono',monospace;font-size:9px;cursor:pointer;}
+.hist-del{font-size:10px;color:var(--muted);cursor:pointer;opacity:.3;transition:opacity .15s;}
+.hist-del:hover{opacity:1;color:#e74c3c;}
+
+/* Graph modal */
+.graph-modal{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;}
+.graph-modal.open{display:flex;}
+.graph-box{background:var(--paper);border:1.5px solid var(--border);border-radius:10px;padding:24px;width:min(520px,90vw);position:relative;}
+.graph-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);}
+.graph-close:hover{color:var(--ink);}
+#graphCanvas{width:100%;margin-top:12px;border-radius:6px;}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;min-height:100vh;transition:background .3s,color .3s;overflow-x:hidden;}
-.page{max-width:720px;margin:0 auto;padding:80px 24px 80px;}
+
+/* ── LAYOUT: main content + permanent right sidebar ── */
+.layout{display:flex;min-height:100vh;padding-top:54px;}
+.page{flex:1;max-width:720px;margin:0 auto;padding:28px 24px 80px;min-width:0;}
+.right-sidebar{
+  width:var(--panel-w);flex-shrink:0;
+  background:var(--paper);
+  border-left:1px solid var(--border);
+  position:fixed;top:54px;right:0;bottom:0;
+  overflow-y:auto;
+  padding:14px;
+  transition:background .3s,border-color .3s;
+  z-index:50;
+}
+/* push page content away from sidebar */
+@media(min-width:900px){
+  .page{margin-right:calc(var(--panel-w) + 24px);}
+}
 
 /* ── TOP BAR ── */
 .top-bar{position:fixed;top:0;left:0;right:0;z-index:300;display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--paper);border-bottom:1px solid var(--border);transition:background .3s,border-color .3s;gap:8px;flex-wrap:wrap;}
@@ -47,7 +103,6 @@ body{background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;min-
 
 .side-panel{position:fixed;top:0;bottom:0;z-index:500;width:var(--panel-w);background:var(--paper);border:1px solid var(--border);display:flex;flex-direction:column;transition:transform .35s cubic-bezier(.4,0,.2,1),box-shadow .35s;box-shadow:none;}
 .side-panel.left-panel{left:0;transform:translateX(-100%);}
-.side-panel.right-panel{right:0;transform:translateX(100%);}
 .side-panel.open{transform:translateX(0);box-shadow:0 0 40px rgba(0,0,0,.18);}
 
 .panel-header{padding:16px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
@@ -188,6 +243,13 @@ h1 span{color:var(--physical);}
 .water-log{margin-top:8px;font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);text-align:center;opacity:0;transition:opacity .3s;min-height:12px;}
 .water-log.show{opacity:1;}
 
+/* Water widget slide toggle */
+.water-widget{transition:transform .35s cubic-bezier(.4,0,.2,1),background .3s,border-color .3s;}
+.water-widget.hidden{transform:translateX(calc(100% - 18px));}
+#waterPullTab{position:absolute;left:-1px;top:50%;transform:translateY(-50%);background:var(--paper);border:1.5px solid var(--border);border-right:none;border-radius:6px 0 0 6px;padding:8px 5px;cursor:pointer;display:none;font-size:11px;color:var(--muted);transition:color .15s;}
+#waterPullTab:hover{color:var(--ink);}
+.water-widget.hidden #waterPullTab{display:flex;align-items:center;}
+
 /* ── SLEEP SCREEN ── */
 .sleep-screen{display:none;position:fixed;inset:0;z-index:9999;background:#0a0a0f;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
 .sleep-screen.active{display:flex;}
@@ -261,24 +323,68 @@ h1 span{color:var(--physical);}
   </div>
 </div>
 
-<!-- RIGHT PANEL: Exams -->
-<div class="side-panel right-panel" id="examsPanel">
-  <div class="panel-header">
-    <div class="panel-title">📅 Exams</div>
-    <button class="panel-close" onclick="togglePanel('exams')">✕</button>
+<!-- RIGHT SIDEBAR: Exams (permanent) -->
+<div class="right-sidebar" id="examsPanel">
+  <!-- Tabs -->
+  <div class="exam-tabs">
+    <button class="exam-tab active" id="tabScheduled" onclick="switchExamTab('scheduled')">📋 Scheduled</button>
+    <button class="exam-tab" id="tabHistory" onclick="switchExamTab('history')">📊 History</button>
   </div>
-  <div class="panel-body">
-    <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">UPCOMING EXAMS</div>
-    <div id="examsList"></div>
-    <div style="border-top:1px dashed var(--border);margin:14px 0 10px;"></div>
-    <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">ADD EXAM</div>
-    <div class="add-exam-form">
-      <input id="examName" placeholder="Exam name (e.g. JEE Main)"/>
-      <input id="examDate" type="date"/>
-      <input id="examTime" type="time" placeholder="Exam time (optional)"/>
-      <div class="exam-colors" id="examColors"></div>
-      <button class="add-note-btn" onclick="addExam()" style="width:100%;padding:7px;">Add Exam</button>
+
+  <!-- Sliding views -->
+  <div class="exam-views-wrap">
+    <div class="exam-views" id="examViews">
+
+      <!-- VIEW 1: Scheduled Exams -->
+      <div class="exam-view" id="viewScheduled">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">UPCOMING EXAMS</div>
+        <div id="examsList"></div>
+        <div style="border-top:1px dashed var(--border);margin:14px 0 10px;"></div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">ADD EXAM</div>
+        <div class="add-exam-form">
+          <input id="examName" placeholder="Exam name (e.g. JEE Main)"/>
+          <input id="examDate" type="date"/>
+          <input id="examTime" type="time" placeholder="Exam time (optional)"/>
+          <div class="exam-colors" id="examColors"></div>
+          <button class="add-note-btn" onclick="addExam()" style="width:100%;padding:7px;">Add Exam</button>
+        </div>
+      </div>
+
+      <!-- VIEW 2: Exam History -->
+      <div class="exam-view" id="viewHistory">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">EXAM HISTORY</div>
+          <button onclick="showMarksGraph()" style="background:var(--ink);color:var(--bg);border:none;border-radius:4px;padding:4px 10px;font-family:'DM Mono',monospace;font-size:9px;cursor:pointer;">📈 Graph</button>
+        </div>
+        <table class="hist-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Exam</th>
+              <th>Marks</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="histTableBody"></tbody>
+        </table>
+        <div class="hist-add-row">
+          <input id="histDate" placeholder="DD/MM" style="max-width:55px;"/>
+          <input id="histName" placeholder="Exam name"/>
+          <input id="histMarks" placeholder="Marks" style="max-width:50px;" type="number"/>
+          <button class="hist-btn" onclick="addHistEntry()">Add</button>
+        </div>
+      </div>
+
     </div>
+  </div>
+</div>
+
+<!-- Graph Modal -->
+<div class="graph-modal" id="graphModal">
+  <div class="graph-box">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;">Marks vs Date 📈</div>
+    <button class="graph-close" onclick="closeMarksGraph()">✕</button>
+    <canvas id="graphCanvas" height="260"></canvas>
   </div>
 </div>
 
@@ -311,15 +417,18 @@ h1 span{color:var(--physical);}
   </div>
   <div class="top-bar-right">
     <button class="theme-toggle" onclick="toggleTheme()"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button>
-    <button class="icon-btn" id="examsBtn" onclick="togglePanel('exams')" title="Exams">📅</button>
   </div>
 </div>
 
 <!-- Water Widget -->
-<div class="water-widget" id="waterWidget">
+<div class="water-widget" id="waterWidget" style="position:fixed;bottom:24px;right:0;z-index:200;">
+  <div id="waterPullTab" onclick="openWaterWidget()">◀</div>
   <div class="water-header">
     <div class="water-title">💧 Hydration</div>
-    <div class="water-count">Today: <span id="waterCount">0</span> 🥤</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="water-count">Today: <span id="waterCount">0</span> 🥤</div>
+      <div onclick="closeWaterWidget()" style="cursor:pointer;font-size:12px;color:var(--muted);opacity:.5;transition:opacity .15s;line-height:1;padding:2px 4px;border-radius:3px;" onmouseover="this.style.opacity=1;this.style.color='#e74c3c'" onmouseout="this.style.opacity=.5;this.style.color=''">✕</div>
+    </div>
   </div>
   <div class="timer-ring-wrap">
     <svg width="76" height="76" viewBox="0 0 80 80">
@@ -377,7 +486,8 @@ h1 span{color:var(--physical);}
   </div>
 </div>
 
-<!-- Main Page -->
+<!-- Main Layout -->
+<div class="layout">
 <div class="page">
   <div class="header">
     <div><h1>JEE<br><span>2026</span></h1></div>
@@ -395,7 +505,8 @@ h1 span{color:var(--physical);}
     <div class="quote">"Go as far as you can today.<br>Tomorrow, go further."</div>
     <div class="total"><strong id="doneCount">0</strong> tasks crushed</div>
   </div>
-</div>
+</div><!-- end .page -->
+</div><!-- end .layout -->
 
 <script>
 const SK = 'jee2026_v5';
@@ -451,9 +562,9 @@ const DEFAULT_SECTIONS = [
   ]},
   { id:'physics', label:'Physics', type:'physics', tasks:[] },
   { id:'maths', label:'Maths', type:'maths', tasks:[] },
+  { id:'general', label:'General Tasks', type:'general', tasks:[] },
 ];
 
-// ── SUPABASE CONFIG — paste your values here after setup ──
 const SUPABASE_URL = 'https://yozegvoysdxmrjmttmim.supabase.co';       // e.g. https://xxxx.supabase.co
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvemVndm95c2R4bXJqbXR0bWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NzcwMTEsImV4cCI6MjA4OTI1MzAxMX0._vj1rEV4UBo_8X7VZWDO-VzEiyy7zLZE3MAnFm0Y3dk';  // starts with eyJ...
 const SUPABASE_ENABLED = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
@@ -463,17 +574,23 @@ function loadState() {
     const s = localStorage.getItem(SK);
     if (s) {
       const p = JSON.parse(s);
-      ['physics','maths'].forEach(id => {
-        if (!p.sections.find(s=>s.id===id))
-          p.sections.push(JSON.parse(JSON.stringify(DEFAULT_SECTIONS.find(s=>s.id===id))));
+      // Only add missing SECTION SHELLS (no tasks) — never overwrite existing tasks
+      ['physics','maths','physical','inorganic','organic','general'].forEach(id => {
+        if (!p.sections.find(sec=>sec.id===id)) {
+          const def = DEFAULT_SECTIONS.find(sec=>sec.id===id);
+          if (def) p.sections.push({id:def.id, label:def.label, type:def.type, tasks:[]});
+        }
       });
       return p;
     }
   } catch(e) {}
+  // Brand new user — start with EMPTY tasks (cloud will fill them in)
   return {
-    theme:'light', sections:JSON.parse(JSON.stringify(DEFAULT_SECTIONS)),
+    theme:'light',
+    sections: DEFAULT_SECTIONS.map(s=>({id:s.id, label:s.label, type:s.type, tasks:[]})),
     waterCount:0, waterSecondsLeft:3600, studySeconds:0,
-    swSeconds:0, notepad:'', noteTasks:[], exams:[], nightNotes:[]
+    swSeconds:0, notepad:'', noteTasks:[], exams:[], nightNotes:[],
+    lastWaterResetDate:''
   };
 }
 
@@ -487,23 +604,79 @@ async function loadFromCloud() {
     const rows = await res.json();
     if (rows && rows[0] && rows[0].data && Object.keys(rows[0].data).length > 0) {
       const cloudData = rows[0].data;
-      // Use cloud data if it's newer (has more content)
-      ['physics','maths'].forEach(id => {
-        if (!cloudData.sections) return;
-        if (!cloudData.sections.find(s=>s.id===id))
-          cloudData.sections.push(JSON.parse(JSON.stringify(DEFAULT_SECTIONS.find(s=>s.id===id))));
+
+      // ── SAFE MERGE: never delete anything, always keep MORE data ──
+
+      // 1. Notepad: keep whichever is longer
+      cloudData.notepad = ((state.notepad||'').length >= (cloudData.notepad||'').length)
+        ? (state.notepad||'') : (cloudData.notepad||'');
+
+      // 2. NoteTasks: merge, no duplicates by createdAt
+      const mergedNT = [...(cloudData.noteTasks||[])];
+      (state.noteTasks||[]).forEach(lt=>{
+        if(!mergedNT.find(ct=>ct.createdAt===lt.createdAt)) mergedNT.push(lt);
       });
+      cloudData.noteTasks = mergedNT;
+
+      // 3. Exams: merge, no duplicates by name+date
+      const mergedEx = [...(cloudData.exams||[])];
+      (state.exams||[]).forEach(le=>{
+        if(!mergedEx.find(ce=>ce.name===le.name&&ce.date===le.date)) mergedEx.push(le);
+      });
+      cloudData.exams = mergedEx;
+
+      // 4. Sections/tasks: merge each section — keep tasks from BOTH
+      if (!cloudData.sections) cloudData.sections = [];
+      (state.sections||[]).forEach(localSec=>{
+        const cloudSec = cloudData.sections.find(s=>s.id===localSec.id);
+        if (!cloudSec) {
+          cloudData.sections.push(localSec); // whole local section missing from cloud
+        } else {
+          // merge tasks
+          const mergedTasks = [...(cloudSec.tasks||[])];
+          (localSec.tasks||[]).forEach(lt=>{
+            if(!mergedTasks.find(ct=>ct.id===lt.id)) mergedTasks.push(lt);
+          });
+          // merge subtasks within each task
+          mergedTasks.forEach(t=>{
+            const localTask = localSec.tasks.find(lt=>lt.id===t.id);
+            if(localTask && localTask.subs){
+              const mergedSubs=[...(t.subs||[])];
+              localTask.subs.forEach(ls=>{
+                if(!mergedSubs.find(cs=>cs.id===ls.id)) mergedSubs.push(ls);
+              });
+              t.subs = mergedSubs;
+            }
+          });
+          cloudSec.tasks = mergedTasks;
+        }
+      });
+
+      // 5. Night notes: merge arrays deduped
+      cloudData.nightNotes = [...new Set([...(cloudData.nightNotes||[]),...(state.nightNotes||[])])];
+
+      // 6. Keep highest study seconds
+      cloudData.studySeconds = Math.max(cloudData.studySeconds||0, state.studySeconds||0);
+
+      // 7. Exam history: merge by name+date
+      const mergedHist = [...(cloudData.examHistory||[])];
+      (state.examHistory||[]).forEach(lh=>{
+        if(!mergedHist.find(ch=>ch.name===lh.name&&ch.date===lh.date)) mergedHist.push(lh);
+      });
+      cloudData.examHistory = mergedHist;
+
       state = cloudData;
       studySeconds = state.studySeconds||0;
       swSeconds = state.swSeconds||0;
       waterSecondsLeft = state.waterSecondsLeft||3600;
       waterTotal = state.waterCount||0;
       try { localStorage.setItem(SK, JSON.stringify(state)); } catch(e) {}
-      // Re-render with cloud data
       render();
       document.getElementById('waterCount').textContent = waterTotal;
       renderStudyTimer();
       renderStopwatch();
+      const noteEl = document.getElementById('notepadText');
+      if (noteEl) noteEl.value = state.notepad||'';
       if (state.theme==='dark') {
         document.documentElement.setAttribute('data-theme','dark');
         document.getElementById('themeIcon').textContent='☀️';
@@ -538,16 +711,20 @@ function pushToCloud() {
 
 // Small sync indicator
 function showSyncStatus(msg) {
+  // Only show for actual cloud save/sync — not for water resets etc
+  if (!msg.includes('☁️')) return;
   let el = document.getElementById('syncStatus');
   if (!el) {
     el = document.createElement('div');
     el.id = 'syncStatus';
-    el.style.cssText = 'position:fixed;bottom:8px;left:50%;transform:translateX(-50%);font-family:"DM Mono",monospace;font-size:9px;color:var(--muted);letter-spacing:1px;background:var(--paper);border:1px solid var(--border);padding:3px 10px;border-radius:20px;z-index:9999;opacity:0;transition:opacity .3s;';
+    el.style.cssText = 'position:fixed;bottom:8px;left:50%;transform:translateX(-50%);font-family:"DM Mono",monospace;font-size:9px;color:#2ecc71;letter-spacing:1px;background:var(--paper);border:1px solid #2ecc71;padding:3px 12px;border-radius:20px;z-index:9999;opacity:1;';
     document.body.appendChild(el);
   }
   el.textContent = msg;
   el.style.opacity = '1';
-  setTimeout(() => el.style.opacity = '0', 2500);
+  // stays visible for 3 seconds then hides — no fade
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => { el.style.opacity = '0'; }, 3000);
 }
 
 let state = loadState();
@@ -594,11 +771,12 @@ function toggleTheme() {
   state.theme=dark?'light':'dark'; save();
 }
 
-// ── PANELS ──
+// ── PANELS (only notepad slides in now - exams is permanent sidebar) ──
 let activePanel = null;
 function togglePanel(name) {
-  const panels = {notepad:'notepadPanel', exams:'examsPanel'};
-  const btns = {notepad:'notepadBtn', exams:'examsBtn'};
+  if (name==='exams') return; // always visible
+  const panels = {notepad:'notepadPanel'};
+  const btns = {notepad:'notepadBtn'};
   const overlay = document.getElementById('panelOverlay');
   if (activePanel===name) {
     document.getElementById(panels[name]).classList.remove('open');
@@ -615,12 +793,11 @@ function togglePanel(name) {
     overlay.classList.add('open');
     activePanel=name;
     if (name==='notepad') renderNotepad();
-    if (name==='exams') { renderExams(); renderExamColors(); }
   }
 }
 function closeAllPanels() {
-  ['notepadPanel','examsPanel'].forEach(id=>document.getElementById(id).classList.remove('open'));
-  ['notepadBtn','examsBtn'].forEach(id=>document.getElementById(id).classList.remove('active-btn'));
+  ['notepadPanel'].forEach(id=>document.getElementById(id).classList.remove('open'));
+  ['notepadBtn'].forEach(id=>document.getElementById(id).classList.remove('active-btn'));
   document.getElementById('panelOverlay').classList.remove('open');
   activePanel=null;
 }
@@ -786,7 +963,13 @@ function saveNightNote() {
 function render() {
   const c=document.getElementById('mainContainer');
   c.innerHTML='';
-  state.sections.forEach(sec=>renderSection(sec,c));
+  // Show General Tasks first, then the rest
+  const ORDER = ['general','physical','inorganic','organic','physics','maths'];
+  const sorted = [...state.sections].sort((a,b)=>{
+    const ai=ORDER.indexOf(a.id), bi=ORDER.indexOf(b.id);
+    return (ai===-1?99:ai)-(bi===-1?99:bi);
+  });
+  sorted.forEach(sec=>renderSection(sec,c));
   updateProgress();
 }
 
@@ -1707,6 +1890,150 @@ function runMathsBlackboard() {
   setTimeout(hideCelebCanvas, 6000);
 }
 
+// ── EXAM TABS ──
+let currentExamTab = 'scheduled';
+function switchExamTab(tab) {
+  currentExamTab = tab;
+  document.getElementById('tabScheduled').classList.toggle('active', tab==='scheduled');
+  document.getElementById('tabHistory').classList.toggle('active', tab==='history');
+  const views = document.getElementById('examViews');
+  if (tab==='history') {
+    views.classList.add('show-history');
+    renderHistTable();
+  } else {
+    views.classList.remove('show-history');
+  }
+}
+
+// ── EXAM HISTORY ──
+function renderHistTable() {
+  const tbody = document.getElementById('histTableBody');
+  if (!tbody) return;
+  tbody.innerHTML='';
+  (state.examHistory||[]).forEach((entry,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${escHtml(entry.date)}</td>
+      <td>${escHtml(entry.name)}</td>
+      <td>${entry.marks!==undefined?entry.marks:'-'}</td>
+      <td><span class="hist-del" onclick="deleteHistEntry(${i})">✕</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function addHistEntry() {
+  const date = document.getElementById('histDate').value.trim();
+  const name = document.getElementById('histName').value.trim();
+  const marks = document.getElementById('histMarks').value.trim();
+  if (!date||!name) return;
+  if (!state.examHistory) state.examHistory=[];
+  // Default year 2026
+  const fullDate = date.includes('/') ? date + '/2026' : date;
+  state.examHistory.push({date:fullDate, name, marks:marks?Number(marks):''});
+  document.getElementById('histDate').value='';
+  document.getElementById('histName').value='';
+  document.getElementById('histMarks').value='';
+  save(); renderHistTable();
+}
+
+function deleteHistEntry(i) {
+  state.examHistory.splice(i,1);
+  save(); renderHistTable();
+}
+
+// ── MARKS GRAPH ──
+function showMarksGraph() {
+  const entries = (state.examHistory||[]).filter(e=>e.marks!==''&&e.marks!==undefined);
+  if (!entries.length) { alert('No marks data yet! Add some exam results first.'); return; }
+  document.getElementById('graphModal').classList.add('open');
+  drawGraph(entries);
+}
+
+function closeMarksGraph() {
+  document.getElementById('graphModal').classList.remove('open');
+}
+
+function drawGraph(entries) {
+  const canvas = document.getElementById('graphCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth||460;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = 260 * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const cW=W, cH=260;
+  const pad={top:20,right:20,bottom:60,left:50};
+  const plotW=cW-pad.left-pad.right;
+  const plotH=cH-pad.top-pad.bottom;
+
+  const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+  const bg = isDark?'#16161e':'#faf7f2';
+  const ink = isDark?'#e8e4dc':'#1a1410';
+  const gridCol = isDark?'#2a2a3a':'#d4c9b8';
+  const lineCol = '#3498db';
+  const dotCol = '#e74c3c';
+
+  ctx.fillStyle=bg; ctx.fillRect(0,0,cW,cH);
+
+  const marks = entries.map(e=>Number(e.marks));
+  const minM=Math.min(...marks), maxM=Math.max(...marks);
+  const range = maxM-minM || 10;
+
+  // Grid lines
+  ctx.strokeStyle=gridCol; ctx.lineWidth=1;
+  for(let g=0;g<=4;g++){
+    const y=pad.top+plotH*(1-g/4);
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(pad.left+plotW,y); ctx.stroke();
+    ctx.fillStyle=isDark?'#6b6b80':'#8a7f72';
+    ctx.font='10px DM Mono,monospace'; ctx.textAlign='right';
+    ctx.fillText(Math.round(minM+range*g/4), pad.left-6, y+4);
+  }
+
+  // Axes
+  ctx.strokeStyle=ink; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(pad.left,pad.top); ctx.lineTo(pad.left,pad.top+plotH); ctx.lineTo(pad.left+plotW,pad.top+plotH); ctx.stroke();
+
+  const xStep = entries.length>1 ? plotW/(entries.length-1) : plotW/2;
+
+  // Line
+  ctx.strokeStyle=lineCol; ctx.lineWidth=2.5; ctx.lineJoin='round';
+  ctx.beginPath();
+  entries.forEach((e,i)=>{
+    const x=pad.left+(entries.length>1?i*xStep:plotW/2);
+    const y=pad.top+plotH*(1-(Number(e.marks)-minM)/range);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // Filled area under line
+  ctx.beginPath();
+  entries.forEach((e,i)=>{
+    const x=pad.left+(entries.length>1?i*xStep:plotW/2);
+    const y=pad.top+plotH*(1-(Number(e.marks)-minM)/range);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.lineTo(pad.left+(entries.length>1?(entries.length-1)*xStep:plotW/2), pad.top+plotH);
+  ctx.lineTo(pad.left, pad.top+plotH);
+  ctx.closePath();
+  ctx.fillStyle='rgba(52,152,219,0.12)'; ctx.fill();
+
+  // Dots + labels
+  entries.forEach((e,i)=>{
+    const x=pad.left+(entries.length>1?i*xStep:plotW/2);
+    const y=pad.top+plotH*(1-(Number(e.marks)-minM)/range);
+    ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2);
+    ctx.fillStyle=dotCol; ctx.fill();
+    ctx.strokeStyle=bg; ctx.lineWidth=1.5; ctx.stroke();
+    // marks label above dot
+    ctx.fillStyle=ink; ctx.font='bold 11px DM Mono,monospace'; ctx.textAlign='center';
+    ctx.fillText(e.marks, x, y-10);
+    // date label below axis
+    ctx.fillStyle=isDark?'#6b6b80':'#8a7f72'; ctx.font='9px DM Mono,monospace';
+    ctx.save(); ctx.translate(x,pad.top+plotH+8); ctx.rotate(Math.PI/5);
+    ctx.fillText(e.date.replace('/2026',''), 0, 0); ctx.restore();
+  });
+}
+
 // ── CONFETTI ──
 function launchConfetti(secType) {
   const colorMap={
@@ -1834,6 +2161,14 @@ function showWaterLog(msg){
   l.textContent=msg;l.classList.add('show');
   setTimeout(()=>l.classList.remove('show'),3000);
 }
+function closeWaterWidget(){
+  const w=document.getElementById('waterWidget');
+  w.classList.add('hidden');
+}
+function openWaterWidget(){
+  const w=document.getElementById('waterWidget');
+  w.classList.remove('hidden');
+}
 if('Notification' in window&&Notification.permission==='default') Notification.requestPermission();
 startWaterTimer();
 
@@ -1849,6 +2184,9 @@ function generateStars(){
 }
 generateStars();
 
+let wasLocked = false;
+let lastWaterResetDate = state.lastWaterResetDate || '';
+
 function updateClock(){
   const now=new Date(),h24=now.getHours(),min=now.getMinutes();
   const h12=h24%12||12,ampm=h24<12?'AM':'PM';
@@ -1857,10 +2195,43 @@ function updateClock(){
   document.getElementById('clockAmpm').textContent=ampm;
   document.getElementById('sleepClock').textContent=t;
   document.getElementById('clockWidget').classList.toggle('bedtime',h24>=23);
-  const locked=h24===0||(h24>=1&&h24<6)||(h24===6&&min<30);
-  document.getElementById('sleepScreen').classList.toggle('active',locked);
-  document.getElementById('nightNoteBox').style.display=locked?'block':'none';
-  document.getElementById('waterWidget').style.display=locked?'none':'';
+  const locked=h24===0||(h24>=1&&h24<3)||(h24===3&&min<0);
+  // sleep lock: midnight to 6:30am (but water resets at 3am)
+  const sleepLocked = h24===1||(h24>=2&&h24<6)||(h24===6&&min<30);
+  document.getElementById('sleepScreen').classList.toggle('active',sleepLocked);
+  document.getElementById('nightNoteBox').style.display=sleepLocked?'block':'none';
+  document.getElementById('waterWidget').style.display=sleepLocked?'none':'';
+
+  // ── DAILY WATER RESET AT 3:00 AM ──
+  const today = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+  const resetKey = `${today}-3am`;
+  if (h24===3 && min===0 && lastWaterResetDate !== resetKey) {
+    lastWaterResetDate = resetKey;
+    state.lastWaterResetDate = resetKey;
+    waterTotal = 0;
+    state.waterCount = 0;
+    document.getElementById('waterCount').textContent = 0;
+    save();
+    showSyncStatus('💧 Water count reset for new day!');
+  }
+
+  // ── When page unlocks after sleep, reload cloud data WITHOUT wiping notepad ──
+  if (wasLocked && !sleepLocked) {
+    // Page just unlocked — sync from cloud but preserve any typed notes
+    const currentNotepad = document.getElementById('notepadText')
+      ? document.getElementById('notepadText').value
+      : state.notepad;
+    loadFromCloud().then(()=>{
+      // restore notepad if it was longer locally (user typed during night)
+      const el = document.getElementById('notepadText');
+      if (el && currentNotepad && currentNotepad.length > (state.notepad||'').length) {
+        state.notepad = currentNotepad;
+        el.value = currentNotepad;
+        save();
+      }
+    });
+  }
+  wasLocked = sleepLocked;
 }
 updateClock();
 setInterval(updateClock,1000);
@@ -1868,7 +2239,9 @@ setInterval(updateClock,1000);
 // ── INIT ──
 render();
 renderExamColors();
-loadFromCloud(); // Pull latest from Supabase
+renderExams();
+renderHistTable();
+loadFromCloud();
 
 // Resume study timer if it was running before refresh
 if (state.studyRunning) {
